@@ -97,7 +97,9 @@ class CrossEntropyLoss(object):
     def forward(self, input, target):
         return input.cross_entropy(target)
 
-np.random.seed(0)
+
+#### Test ####
+"""np.random.seed(0)
 
 data = Tensor(np.array([[0,0],[0,1],[1,0],[1,1]]), autograd=True)
 target = Tensor(np.array([[0],[1],[0],[1]]), autograd=True)
@@ -119,3 +121,4 @@ for i in range(10):
     loss.backward(Tensor(np.ones_like(loss.data)))
     optim.step()
     print(loss)
+    """

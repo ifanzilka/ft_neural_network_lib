@@ -44,6 +44,9 @@ class NeuralNetwork(object):
 		self.layers = layers
 		self.loss = loss
 		self.seed = seed
+		"""
+		Добавляем атрибут
+		"""
 		if seed:
 			for layer in self.layers:
 				setattr(layer, "seed", self.seed)        
@@ -62,7 +65,7 @@ class NeuralNetwork(object):
 		'''
 		Передача данных назад через последовательность слоев.
 		'''
-
+		# вычислили dL/dx 
 		grad = loss_grad
 		for layer in reversed(self.layers):
 			grad = layer.backward(grad)
@@ -79,7 +82,7 @@ class NeuralNetwork(object):
 		'''
 
 		predictions = self.forward(x_batch)
-
+		# Считаем ошибку по тому классу который выбрали
 		loss = self.loss.forward(predictions, y_batch)
 
 		self.backward(self.loss.backward())

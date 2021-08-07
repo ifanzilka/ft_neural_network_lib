@@ -30,7 +30,6 @@ class SGD(Optimizer):
 		Для каждого параметра настраивается направление, при этом
 		амплитуда регулировки зависит от скорости обучения.
 		'''
-		for (param, param_grad) in zip(self.net.params(),
-					self.net.param_grads()):
+		for (param, param_grad) in zip(self.net.params(), self.net.param_grads()):
 
 			param -= self.lr * param_grad

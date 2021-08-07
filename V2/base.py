@@ -20,6 +20,7 @@ class Operation(object):
 		inference -> dropout
 		'''
 		self.input_ = input_
+		# У каждой операции свой у умножения np dot
 		self.output = self._output(inference)
 		return self.output
 	
@@ -76,8 +77,11 @@ class ParamOperation(Operation):
 		'''
 
 		assert_same_shape(self.output, output_grad)
-
+		# Пришло 32 на 1 делаем обратную операцию
+		# Сделали обратную операцию умножению (точнее производная от матричного умножения)
+		# Это мы передали след слою
 		self.input_grad = self._input_grad(output_grad)
+		#Это как мы будем менять веса
 		self.param_grad = self._param_grad(output_grad)
 
 		assert_same_shape(self.input_, self.input_grad)

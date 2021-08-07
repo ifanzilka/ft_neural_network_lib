@@ -16,7 +16,9 @@ class Layer(object):
 		'''
 		self.neurons = neurons
 		self.first = True
+		#заполняем когда инициализируем веса 
 		self.params: List[ndarray] = []
+		# градиент по параметрам. заполняю во время обратного прохода
 		self.param_grads: List[ndarray] = []
 		self.operations: List[Operation] = []
 
@@ -31,13 +33,14 @@ class Layer(object):
 		Передача входа вперед через серию операций.
 		''' 
 
-		# Если в первый раз то инициализируем
+		# Если в первый раз то инициализируем (пришло (batch_size, len))
 		if self.first:
 			self._setup_layer(input_)
 			self.first = False
 
 		self.input_ = input_
 
+		# проходим по всем операциям в слое
 		for operation in self.operations:
 
 			input_ = operation.forward(input_)
@@ -53,17 +56,19 @@ class Layer(object):
 		'''
 
 		assert_same_shape(self.output, output_grad)
-
+		#  обратный проход по операциям
 		for operation in reversed(self.operations):
 			output_grad = operation.backward(output_grad)
 
 		input_grad = output_grad
 
+		# список обратных операций	
 		self._param_grads()
 
 		return input_grad
 
 	def _param_grads(self) -> ndarray:
+		
 		'''
 		Извлечение _param_grads из операций слоя.
 		'''
@@ -71,6 +76,7 @@ class Layer(object):
 		self.param_grads = []
 		for operation in self.operations:
 			if issubclass(operation.__class__, ParamOperation):
+				# add gradinet to operation
 				self.param_grads.append(operation.param_grad)
 
 	def _params(self) -> ndarray:
@@ -87,6 +93,7 @@ class Layer(object):
 class Dense(Layer):
 	'''
 	Полносвязный слой, наследующий от Layer.
+	operations хранит 
 	'''
 	def __init__(self,
 				 neurons: int,
@@ -113,6 +120,7 @@ class Dense(Layer):
 		# bias
 		self.params.append(np.random.randn(1, self.neurons))
 
+		# в этом слое из операций добавим умножение и прибавление смещения
 		self.operations = [WeightMultiply(self.params[0]),
 				 		  BiasAdd(self.params[1]),
 					   self.activation]

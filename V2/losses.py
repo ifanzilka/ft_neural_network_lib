@@ -20,7 +20,7 @@ class Loss(object):
 
 		self.prediction = prediction
 		self.target = target
-
+		
 		loss_value = self._output()
 
 		return loss_value

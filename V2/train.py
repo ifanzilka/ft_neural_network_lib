@@ -18,6 +18,7 @@ class Trainer(object):
 		self.net = net
 		self.optim = optim
 		self.best_loss = 1e9
+		# Добавил атрбиут
 		setattr(self.optim, 'net', self.net)
 
 	def generate_batches(self,
@@ -54,6 +55,7 @@ class Trainer(object):
 		'''
 
 		np.random.seed(seed)
+		# Если в первый раз или перезапуск
 		if restart:
 			for layer in self.net.layers:
 				layer.first = True
@@ -66,8 +68,10 @@ class Trainer(object):
 				# for early stopping
 				last_model = deepcopy(self.net)
 
+			# Перемешиваем данные
 			X_train, y_train = permute_data(X_train, y_train)
 
+			# Выдаем массив данных размера батч сайз
 			batch_generator = self.generate_batches(X_train, y_train, batch_size)
 
 			for ii, (X_batch, y_batch) in enumerate(batch_generator):
@@ -89,3 +93,67 @@ class Trainer(object):
 					# ensure self.optim is still updating self.net
 					setattr(self.optim, 'net', self.net)
 					break
+
+lr = NeuralNetwork(
+    layers=[Dense(neurons=20,
+                   activation=Sigmoid()),
+            Dense(neurons=1,
+                   activation=Linear())],
+    loss=MeanSquaredError(),
+    seed=20190501
+)
+
+# Загрузим данные
+
+from sklearn.datasets import load_boston
+
+boston = load_boston()
+data = boston.data
+target = boston.target
+features = boston.feature_names
+
+
+
+# Scaling the data
+from sklearn.preprocessing import StandardScaler
+s = StandardScaler()
+data = s.fit_transform(data)
+
+
+
+def to_2d_np(a: ndarray, 
+          type: str="col") -> ndarray:
+    '''
+    Turns a 1D Tensor into 2D
+    '''
+
+    assert a.ndim == 1, \
+    "Input tensors must be 1 dimensional"
+    
+    if type == "col":        
+        return a.reshape(-1, 1)
+    elif type == "row":
+        return a.reshape(1, -1)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(data, target, test_size=0.3, random_state=80718)
+
+# make target 2d array
+y_train, y_test = to_2d_np(y_train), to_2d_np(y_test)
+print("ok")
+# helper function
+
+def permute_data(X, y):
+    perm = np.random.permutation(X.shape[0])
+    return X[perm], y[perm]
+
+# Первая модель
+
+trainer = Trainer(lr, SGD(lr=0.01))
+
+
+trainer.fit(X_train, y_train, X_test, y_test,
+       epochs = 50,
+       eval_every = 10,
+       seed=20190501);
+print()	

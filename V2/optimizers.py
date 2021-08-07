@@ -3,13 +3,42 @@ import numpy as np
 class Optimizer(object):
 	'''
 	Базовый класс оптимизатора нейросети.
+	lr -> скорость оубчения
+	FINAL_LR -> конечная скорость обучения до которой будем сниажться
 	'''
 	def __init__(self,
-				lr: float = 0.01):
-		'''
-		У оптимизатора должна быть начальная скорость обучения.
-		'''
+				lr: float = 0.01,
+				final_lr: float = 0,
+				decay_type: str = 'exponential') -> None:
 		self.lr = lr
+		self.final_lr = final_lr
+		self.decay_type = decay_type
+		self.first = True
+
+	'''
+	Как будет lr во время обучения (линейное и экспоненциальное затухание)
+	'''
+	def _setup_decay(self) -> None:
+
+		if not self.decay_type:
+			return
+		elif self.decay_type == 'exponential':
+			self.decay_per_epoch = np.power(self.final_lr / self.lr,
+								1.0 / (self.max_epochs - 1))
+		elif self.decay_type == 'linear':
+			self.decay_per_epoch = (self.lr - self.final_lr) / (self.max_epochs - 1)
+	
+	def _decay_lr(self) -> None:
+
+		if not self.decay_type:
+			return
+
+		if self.decay_type == 'exponential':
+			self.lr *= self.decay_per_epoch
+
+		elif self.decay_type == 'linear':
+			self.lr -= self.decay_per_epoch
+		
 
 	def step(self) -> None:
 		'''
@@ -22,9 +51,11 @@ class SGD(Optimizer):
 	Стохастический градиентный оптимизатор.
 	'''    
 	def __init__(self,
-					lr: float = 0.01) -> None:
+					lr: float = 0.01,
+					final_lr:float = 0,
+					decay_type:str = None) -> None:
 		'''Pass'''
-		super().__init__(lr)
+		super().__init__(lr, final_lr, decay_type)
 
 	def step(self):
 		'''
@@ -34,6 +65,15 @@ class SGD(Optimizer):
 		for (param, param_grad) in zip(self.net.params(), self.net.param_grads()):
 
 			param -= self.lr * param_grad
+
+	def _update_rule(self, **kwargs) -> None:
+
+		update = self.lr*kwargs['grad']
+		kwargs['param'] -= update		
+
+
+
+
 
 class SGDMomentum(Optimizer):
 	"""
@@ -73,4 +113,4 @@ class SGDMomentum(Optimizer):
 			kwargs['velocity'] += self.lr * kwargs['grad']
 
 			# Use this to update parameters
-			kwargs['param'] -= kwargs['velocity']			
+			kwargs['param'] -= kwargs['velocity']	

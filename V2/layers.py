@@ -3,6 +3,7 @@ from base import *
 from typing import List
 from activations import *
 from dense import *
+from dropout import *
 
 class Layer(object):
 	'''
@@ -28,7 +29,7 @@ class Layer(object):
 		'''
 		raise NotImplementedError()
 
-	def forward(self, input_: ndarray) -> ndarray:
+	def forward(self, input_: ndarray, inference = False) -> ndarray:
 		'''
 		Передача входа вперед через серию операций.
 		''' 
@@ -43,7 +44,7 @@ class Layer(object):
 		# проходим по всем операциям в слое
 		for operation in self.operations:
 
-			input_ = operation.forward(input_)
+			input_ = operation.forward(input_,inference)
 
 		self.output = input_
 
@@ -94,16 +95,21 @@ class Dense(Layer):
 	'''
 	Полносвязный слой, наследующий от Layer.
 	operations хранит 
+	weight_init -> настройка весов чтобы при мзенение всех признаков ответ не менялся уменьшаме дисперсию и чтобы масштаб признков не заичел от количества
+	
 	'''
 	def __init__(self,
-				 neurons: int,
-				 activation: Operation = Sigmoid()):
-		'''
-		 Для инициализации нужна функция активации.
-		'''
+				neurons: int,
+				activation: Operation = Linear(),
+				conv_in: bool = False,
+				dropout: float = 1.0,
+				weight_init: str = "standard") -> None:
 		super().__init__(neurons)
 		self.activation = activation
-
+		self.conv_in = conv_in
+		self.dropout = dropout
+		self.weight_init = weight_init
+	
 	def _setup_layer(self, input_: ndarray) -> None:
 		'''
 		Определение операций для полносвязного слоя.
@@ -111,18 +117,38 @@ class Dense(Layer):
 		if self.seed:
 			np.random.seed(self.seed)
 
+		# кол во входов 784 (грубо говоря чтобы отклонение по всему слоя в начале было 1)
+		num_in = input_.shape[1]
+		if self.weight_init == "glorot":
+			scale = 2/(num_in + self.neurons)
+		else:
+			scale = 1.0
+		
+		#print(input_.shape)
+		#print(scale)
 		self.params = []
 
-
 		# weights. Размера Матрицы весов [количесвто входов на кол-во нейронов]
-		self.params.append(np.random.randn(input_.shape[1], self.neurons))
+		#self.params.append(np.random.randn(input_.shape[1], self.neurons))
 
 		# bias
-		self.params.append(np.random.randn(1, self.neurons))
+		#self.params.append(np.random.randn(1, self.neurons))
+
+		#Стандартное отклонение (разброс или “ширина”) распределения. Должно быть неотрицательным.
+		self.params.append(np.random.normal(loc=0,
+											scale=scale,
+											size=(num_in, self.neurons)))
+
+		# bias
+		self.params.append(np.random.normal(loc=0,
+											scale=scale,
+											size=(1, self.neurons)))
+
 
 		# в этом слое из операций добавим умножение и прибавление смещения
 		self.operations = [WeightMultiply(self.params[0]),
 				 		  BiasAdd(self.params[1]),
 					   self.activation]
-
+		if self.dropout < 1.0:
+			self.operations.append(Dropout(self.dropout))
 		return None

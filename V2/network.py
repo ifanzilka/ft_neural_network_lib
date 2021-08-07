@@ -51,13 +51,13 @@ class NeuralNetwork(object):
 			for layer in self.layers:
 				setattr(layer, "seed", self.seed)        
 
-	def forward(self, x_batch: ndarray) -> ndarray:
+	def forward(self, x_batch: ndarray, inference =False) -> ndarray:
 		'''
 		Передача данных через последовательность слоев.
 		'''
 		x_out = x_batch
 		for layer in self.layers:
-			x_out = layer.forward(x_out)
+			x_out = layer.forward(x_out, inference)
 
 		return x_out
 
@@ -74,14 +74,15 @@ class NeuralNetwork(object):
 
 	def train_batch(self,
 					x_batch: ndarray,
-					y_batch: ndarray) -> float:
+					y_batch: ndarray,
+					inference = False) -> float:
 		'''
 		Передача данных вперед через последовательность слоев.
 		Вычисление потерь.
 		Передача данных назад через последовательность слоев.
 		'''
 
-		predictions = self.forward(x_batch)
+		predictions = self.forward(x_batch,inference)
 		# Считаем ошибку по тому классу который выбрали
 		loss = self.loss.forward(predictions, y_batch)
 
